@@ -1,33 +1,28 @@
+from pages.CalculatorPage import CalculatorPage
 from selenium import webdriver
 from webdriver_manager.chrome import ChromeDriverManager
 from selenium.webdriver.chrome.service import Service as ChromeService
-from pages.FormPage import FormPage
 
 
-def test_illumination_in_form():
+def test_result_15_after_45_seconds():
+
     browser = webdriver.Chrome(
         service=ChromeService(ChromeDriverManager().install()))
 
-    form_page = FormPage(browser)
+    calculator_page = CalculatorPage(browser)
 
-    form_page.open_form()
-    form_page.send_first_name("Иван")
-    form_page.send_last_name("Петров")
-    form_page.send_address("Ленина, 55-3")
-    form_page.send_email("test@skypro.com")
-    form_page.send_phone("+7985899998787")
-    form_page.send_zip_code("")
-    form_page.send_city("Москва")
-    form_page.send_country("Россия")
-    form_page.send_job_position("QA")
-    form_page.send_company("SkyPro")
-    form_page.press_button_submit()
+    calculator_page.open_calculator()
+    input_text = calculator_page.fill_form(3)
+    calculator_page.click_button_7()
+    calculator_page.click_button_plus()
+    calculator_page.click_button_8()
+    waiting_time = calculator_page.click_button_equal()
+    result_in_window = calculator_page.get_result()
 
-    r_cl = form_page.get_class_red()
-    assert "alert-danger" in r_cl, f"в поле нет класса {r_cl}"
-
-    len_green_fields = form_page.get_class_green()
-    assert len_green_fields == 9, (
-        f"Ожидается 9 зеленых полей, но найдено {len(len_green_fields)}")
+    assert waiting_time == input_text, f"Ошибка. Введенное время: {
+        input_text}, время ожидания: {waiting_time}"
+    assert result_in_window == "15", f"Ожидалось 15 а в ответе - {
+        result_in_window}"
 
     browser.quit()
+

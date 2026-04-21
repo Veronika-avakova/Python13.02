@@ -133,3 +133,18 @@ def test_positive_get_project_by_id():
     )
 
     assert response.status_code == 200, "Не удалось получить проект по ID"
+
+
+def test_negative_get_project_by_nonexistent_id():
+    """Негативный тест: получение проекта по несуществующему ID."""
+    nonexistent_id = "00000000-0000-0000-0000-000000000000"
+    headers = get_headers()
+
+    response = requests.get(
+        f'{BASE_URL}/api-v2/projects/{nonexistent_id}',
+        headers=headers
+    )
+
+    assert response.status_code == 404, (
+        f"Ожидался статус 404, получен {response.status_code}"
+    )

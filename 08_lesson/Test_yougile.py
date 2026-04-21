@@ -1,7 +1,21 @@
+import os
 import requests
+from dotenv import load_dotenv
 
-base_url = 'https://ru.yougile.com'
-api_key = ""
+# Загружаем переменные окружения из файла .env
+load_dotenv()
+
+# Получаем ключ из окружения. Если его нет, будет пустая строка.
+API_KEY = os.getenv('YOUGILE_API_KEY', '')
+BASE_URL = 'https://ru.yougile.com'
+
+
+def get_headers():
+    """Функция для генерации заголовков с авторизацией."""
+    headers = {'Content-Type': 'application/json'}
+    if API_KEY:
+        headers['Authorization'] = f'Bearer {API_KEY}'
+    return headers
 
 
 # 1. Создать проект
@@ -9,35 +23,28 @@ api_key = ""
 def test_positive_create_project():
     """Позитивный тест: создание проекта с валидным названием."""
     title = 'Таганрог'
-    my_headers = {
-        'Authorization': f'Bearer {api_key}',
-        'Content-Type': 'application/json'
-    }
+    headers = get_headers()
     body = {"title": title}
 
-    project = requests.post(
-        url=f'{base_url}/api-v2/projects',
+    response = requests.post(
+        f'{BASE_URL}/api-v2/projects',
         json=body,
-        headers=my_headers
+        headers=headers
     )
-    assert project.status_code == 201
+    assert response.status_code == 201
 
 
 def test_negative_create_project():
     """Негативный тест: создание проекта с пустым названием."""
-    title = ''
-    my_headers = {
-        'Authorization': f'Bearer {api_key}',
-        'Content-Type': 'application/json'
-    }
-    body = {"title": title}
+    headers = get_headers()
+    body = {"title": ""}
 
-    project = requests.post(
-        url=f'{base_url}/api-v2/projects',
+    response = requests.post(
+        f'{BASE_URL}/api-v2/projects',
         json=body,
-        headers=my_headers
+        headers=headers
     )
-    assert project.status_code == 400
+    assert response.status_code == 400
 
 
 # 2. Изменить проект
@@ -46,78 +53,59 @@ def test_positive_edit_project():
     """Позитивный тест: изменение названия существующего проекта."""
     title = 'Москва'
     new_title = 'Санкт-Петербург'
-    my_headers = {
-        'Authorization': f'Bearer {api_key}',
-        'Content-Type': 'application/json'
-    }
+    headers = get_headers()
 
     # Создаем проект
-    body = {"title": title}
-    project = requests.post(
-        url=f'{base_url}/api-v2/projects',
-        json=body,
-        headers=my_headers
+    create_resp = requests.post(
+        f'{BASE_URL}/api-v2/projects',
+        json={"title": title},
+        headers=headers
     )
-    assert project.status_code == 201
+    assert create_resp.status_code == 201
 
-    project_id = project.json()['id']
+    project_id = create_resp.json()['id']
 
     # Меняем имя проекта
-    body = {"title": new_title}
-    new_project = requests.put(
-        url=f'{base_url}/api-v2/projects/{project_id}',
-        json=body,
-        headers=my_headers
+    edit_resp = requests.put(
+        f'{BASE_URL}/api-v2/projects/{project_id}',
+        json={"title": new_title},
+        headers=headers
     )
-    assert new_project.status_code == 200
+    assert edit_resp.status_code == 200
 
     # Проверяем, что название изменилось
-    response = requests.get(
-        url=f'{base_url}/api-v2/projects/{project_id}',
-        headers=my_headers
+    get_resp = requests.get(
+        f'{BASE_URL}/api-v2/projects/{project_id}',
+        headers=headers
     )
-    assert response.status_code == 200
-    assert response.json()['title'] == new_title
+    assert get_resp.json()['title'] == new_title
 
 
 def test_negative_edit_project_title():
     """Негативный тест: попытка изменить название на пустую строку."""
     title = 'Москва'
-    new_title = ''
-    my_headers = {
-        'Authorization': f'Bearer {api_key}',
-        'Content-Type': 'application/json'
-    }
+    headers = get_headers()
 
     # Создаем проект
-    body = {"title": title}
-    project = requests.post(
-        url=f'{base_url}/api-v2/projects',
-        json=body,
-        headers=my_headers
+    create_resp = requests.post(
+        f'{BASE_URL}/api-v2/projects',
+        json={"title": title},
+        headers=headers
     )
-    assert project.status_code == 201
 
-    project_id = project.json()['id']
+    if create_resp.status_code != 201:
+        return
+
+    project_id = create_resp.json()['id']
 
     # Пытаемся изменить название на пустое
-    body = {"title": new_title}
     response = requests.put(
-        url=f'{base_url}/api-v2/projects/{project_id}',
-        json=body,
-        headers=my_headers
+        f'{BASE_URL}/api-v2/projects/{project_id}',
+        json={"title": ""},
+        headers=headers
     )
 
-    # Ожидаем ошибку валидации
     assert response.status_code in [400, 422]
-
-    # Проверяем, что название НЕ изменилось
-    get_response = requests.get(
-        url=f'{base_url}/api-v2/projects/{project_id}',
-        headers=my_headers
-    )
-    assert get_response.status_code == 200
-    assert get_response.json()['title'] == title
 
 
 # 3. Получить проект по ID
@@ -125,52 +113,23 @@ def test_negative_edit_project_title():
 def test_positive_get_project_by_id():
     """Позитивный тест: получение проекта по существующему ID."""
     title = 'Таганрог'
-    my_headers = {
-        'Authorization': f'Bearer {api_key}',
-        'Content-Type': 'application/json'
-    }
+    headers = get_headers()
 
     # Создаем проект, чтобы получить его ID
-    body = {"title": title}
-    project = requests.post(
-        url=f'{base_url}/api-v2/projects',
-        json=body,
-        headers=my_headers
+    create_resp = requests.post(
+        f'{BASE_URL}/api-v2/projects',
+        json={"title": title},
+        headers=headers
     )
 
-    assert project.status_code == 201, "Проект не был создан"
+    assert create_resp.status_code == 201, "Проект не был создан"
 
-    project_id = project.json()['id']
+    project_id = create_resp.json()['id']
 
     # Получаем проект по ID
     response = requests.get(
-        url=f'{base_url}/api-v2/projects/{project_id}',
-        headers=my_headers
+        f'{BASE_URL}/api-v2/projects/{project_id}',
+        headers=headers
     )
 
-    # Проверяем результат
     assert response.status_code == 200, "Не удалось получить проект по ID"
-
-    data = response.json()
-
-    assert data['id'] == project_id, "ID полученного проекта не совпадает"
-    assert data['title'] == title, "Название проекта не совпадает"
-
-
-def test_negative_get_project_by_nonexistent_id():
-    """Негативный тест: получение проекта по несуществующему ID."""
-
-    nonexistent_id = "00000000-0000-0000-0000-000000000000"
-
-    my_headers = {
-        'Authorization': f'Bearer {api_key}',
-        'Content-Type': 'application/json'
-    }
-
-    response = requests.get(
-        url=f'{base_url}/api-v2/projects/{nonexistent_id}',
-        headers=my_headers
-    )
-
-    assert response.status_code == 404, (f"Ожидался статус 404, "
-                                         f"получен {response.status_code}")

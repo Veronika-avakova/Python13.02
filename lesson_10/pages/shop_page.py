@@ -10,127 +10,80 @@ class ShopPage:
     """
 
     def __init__(self, browser):
-        """
-        Инициализация страницы.
-
-        :param browser: Экземпляр WebDriver (браузера).
-        """
         self._browser = browser
         self._browser.maximize_window()
 
     def open_page_authorization(self):
-        """
-        Открывает страницу авторизации магазина.
-
-        :return: None
-        """
         self._browser.get("https://www.saucedemo.com/")
         WebDriverWait(self._browser, 10).until(
             EC.visibility_of_all_elements_located((By.CSS_SELECTOR, "div"))
         )
 
     def input_login(self, login: str):
-        """
-        Вводит логин пользователя в поле #user-name.
-
-        :param login: str - Логин пользователя (например, 'standard_user').
-        :return: None
-        """
-        input_username = self._browser.find_element(
-            By.CSS_SELECTOR, "#user-name"
-        )
-        input_username.clear()
-        input_username.send_keys(login)
+        field = self._browser.find_element(By.CSS_SELECTOR, "#user-name")
+        field.clear()
+        field.send_keys(login)
 
     def input_password(self, password: str):
-        """
-        Вводит пароль пользователя в поле #password.
-
-        :param password: str - Пароль пользователя (например, 'secret_sauce').
-        :return: None
-        """
-        input_password = self._browser.find_element(
-            By.CSS_SELECTOR, "#password"
-        )
-        input_password.clear()
-        input_password.send_keys(password)
+        field = self._browser.find_element(By.CSS_SELECTOR, "#password")
+        field.clear()
+        field.send_keys(password)
 
     def press_button_login(self):
-        """
-        Нажимает кнопку входа в систему (Login).
-
-        :return: None
-        """
-        button_login = self._browser.find_element(
-            By.CSS_SELECTOR, "#login-button"
-        )
-        button_login.click()
+        self._browser.find_element(By.CSS_SELECTOR, "#login-button").click()
 
     def add_the_desired_items_to_the_cart(self):
         """
-        Добавляет три конкретных товара в корзину:
-        рюкзак, футболку и комбинезон.
-
-        :return: None
+        Добавляет три товара: рюкзак ($29.99), футболку ($15.99),
+        комбинезон ($7.99). Итого с налогом: $58.29.
         """
-        add_backpack = self._browser.find_element(
-            By.CSS_SELECTOR,
-            "#add-to-cart-sauce-labs-backpack"
-        )
-        add_backpack.click()
+        self._browser.find_element(
+            By.CSS_SELECTOR, "#add-to-cart-sauce-labs-backpack"
+        ).click()
+        self._browser.find_element(
+            By.CSS_SELECTOR, "#add-to-cart-sauce-labs-bolt-t-shirt"
+        ).click()
+        self._browser.find_element(
+            By.CSS_SELECTOR, "#add-to-cart-sauce-labs-onesie"
+        ).click()
 
     def go_in_cart(self):
+        self._browser.find_element(
+            By.CSS_SELECTOR, ".shopping_cart_link"
+        ).click()
+
+    def press_button_checkout(self):
+        self._browser.find_element(By.CSS_SELECTOR, "#checkout").click()
+
+    def input_first_name(self, first_name: str):
+        field = self._browser.find_element(By.CSS_SELECTOR, "#first-name")
+        field.clear()
+        field.send_keys(first_name)
+
+    def input_last_name(self, last_name: str):
+        field = self._browser.find_element(By.CSS_SELECTOR, "#last-name")
+        field.clear()
+        field.send_keys(last_name)
+
+    def input_postal_code(self, postal_code: str):
+        field = self._browser.find_element(By.CSS_SELECTOR, "#postal-code")
+        field.clear()
+        field.send_keys(postal_code)
+
+    def press_button_continue(self):
+        WebDriverWait(self._browser, 10).until(
+            EC.element_to_be_clickable((By.CSS_SELECTOR, "#continue"))
+        ).click()
+
+    def get_itog_sum(self) -> str:
         """
-        Переходит в корзину (открывает модальное окно)
-         и ждет появления кнопки Checkout.
-
-        :return: None
-         """
-        cart_icon = self._browser.find_element(
-            By.CSS_SELECTOR,
-            ".shopping_cart_link"
+        Ожидает появления итоговой суммы и возвращает её значение.
+        Элемент содержит текст вида "Total: $58.29" —
+        метод отрезает префикс и возвращает только "$58.29".
+        """
+        total_element = WebDriverWait(self._browser, 10).until(
+            EC.visibility_of_element_located(
+                (By.CSS_SELECTOR, "[data-test='total-label']")
+            )
         )
-        cart_icon.click()
-
-
-def press_button_checkout(self):
-    """
-    Нажимает кнопку 'Checkout' на странице корзины для перехода
-    к оформлению заказа.
-
-    :return: None
-     """
-    checkout_btn = self._browser.find_element(
-        By.CSS_SELECTOR,
-        "#checkout"
-    )
-    checkout_btn.click()
-
-
-def input_first_name(self, first_name: str):
-    """
-    Вводит имя получателя на этапе оформления заказа.
-
-    :param first_name: str - Имя получателя.
-    :return: None
-     """
-    first_name_field = self._browser.find_element(
-        By.CSS_SELECTOR,
-        "#first-name"
-    )
-    first_name_field.clear()
-    first_name_field.send_keys(first_name)
-
-
-def get_itog_sum(self) -> str:
-    """
-    Получает итоговую сумму заказа из корзины.
-
-
-    :return: str - Итоговая сумма как строка (например, "$58.29").
-     """
-    total_element = self._browser.find_element(
-        By.CSS_SELECTOR,
-        "[data-test='total-label']"
-    )
-    return total_element.text
+        return total_element.text.split(": ")[-1]

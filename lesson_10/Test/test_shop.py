@@ -8,19 +8,11 @@ from lesson_10.pages.shop_page import ShopPage
 
 @pytest.fixture(scope="function")
 def browser():
-    # Создаем сервис для управления драйвером
     service = Service(ChromeDriverManager().install())
-
-    # Создаем опции браузера (можно настроить дополнительные параметры)
     options = webdriver.ChromeOptions()
-
-    # Создаем экземпляр драйвера с сервисом и опциями
+    options.add_argument("--incognito")  # ← вот эта строка
     driver = webdriver.Chrome(service=service, options=options)
-
-    # Возвращаем драйвер для использования в тестах
     yield driver
-
-    # Завершаем работу драйвера после выполнения теста
     driver.quit()
 
 
@@ -59,7 +51,6 @@ def test_total_sum(browser):
     with allure.step("Нажать Continue для завершения заказа"):
         shop_page.press_button_continue()
 
-        # Проверка (Assertion)
     with allure.step("Получить итоговую сумму и проверить её значение"):
         itog_sum = shop_page.get_itog_sum()
         assert itog_sum == "$58.29", (f"Ошибка. Итоговая сумма не верна. "
